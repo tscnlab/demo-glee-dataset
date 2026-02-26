@@ -1,0 +1,12 @@
+{
+  "status": "pass",
+  "repo": "tscnlab/demo-glee-dataset",
+  "commit_sha": "7db451203ceb7f3f2eaaec1b24924ee421f47ada",
+  "validator_version": "0.1.4",
+  "timestamp_utc": "2026-02-26T21:26:08.452415+00:00",
+  "datapackage": "datapackage.json",
+  "warnings": [],
+  "errors": [],
+  "error_count": 0,
+  "warning_count": 0
+}
