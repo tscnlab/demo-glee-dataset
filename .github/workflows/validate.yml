@@ -19,7 +19,9 @@ jobs:
 
       - name: Run validator container
         continue-on-error: true
+        shell: bash
         run: |
+          set -o pipefail
           mkdir -p validation_out
           set +e
 
@@ -39,6 +41,26 @@ jobs:
           echo "$exit_code" > validation_out/exit_code.txt
           exit $exit_code
 
+      - name: Prepare gh-pages payload (snapshot passing validations)
+        shell: bash
+        if: always()
+        run: |
+          # validation_out/validation.json already written by validator via VALIDATION_JSON env
+          test -f validation_out/validation.json || (echo "Missing validation_out/validation.json" && exit 1)
+
+          # If PASS: create immutable snapshot + latest_pass.json
+          STATUS="$(python3 -c "import json; print(json.load(open('validation_out/validation.json'))['status'])")"
+          echo "Validation status: $STATUS"
+
+          if [ "$STATUS" = "pass" ]; then
+            mkdir -p validation_out/passes
+            cp validation_out/validation.json "validation_out/passes/${{ github.sha }}.json"
+            cp validation_out/validation.json "validation_out/latest_pass.json"
+            echo "Wrote passes/${{ github.sha }}.json and latest_pass.json"
+          else
+            echo "Not a pass; no pass snapshot written."
+          fi
+
       - name: Upload validation artifact
         if: always()
         uses: actions/upload-artifact@v4
@@ -55,6 +77,7 @@ jobs:
           publish_dir: validation_out
       
       - name: Fail workflow if validation failed
+        shell: bash 
         if: always()
         run: |
           exit_code=$(cat validation_out/exit_code.txt)
