@@ -1,12 +1,20 @@
 {
-  "status": "pass",
+  "status": "fail",
   "repo": "tscnlab/demo-glee-dataset",
-  "commit_sha": "764725ce9b649608c84a474da6046a1381e637df",
+  "commit_sha": "fd378c3a17d61304287b2f137231ebc6bcd6f101",
   "validator_version": "0.1.4",
-  "timestamp_utc": "2026-02-27T12:08:09.354465+00:00",
+  "timestamp_utc": "2026-02-27T12:10:19.852607+00:00",
   "datapackage": "datapackage.json",
   "warnings": [],
-  "errors": [],
-  "error_count": 0,
+  "errors": [
+    {
+      "message": "[study CG2024] Unknown dataset ID in study_datasets: 'DS011'",
+      "path": [
+        "study_datasets",
+        0
+      ]
+    }
+  ],
+  "error_count": 1,
   "warning_count": 0
 }
