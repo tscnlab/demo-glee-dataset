@@ -39,16 +39,32 @@ jobs:
 
           exit_code=${PIPESTATUS[0]}
           echo "$exit_code" > validation_out/exit_code.txt
-          exit $exit_code
+          exit 0
 
-      - name: Prepare gh-pages payload (snapshot passing validations)
-        shell: bash
+      - name: Prepare gh-pages payload (sticky latest_pass)
         if: always()
+        shell: bash
         run: |
-          # validation_out/validation.json already written by validator via VALIDATION_JSON env
+          set -euo pipefail
+
           test -f validation_out/validation.json || (echo "Missing validation_out/validation.json" && exit 1)
 
-          # If PASS: create immutable snapshot + latest_pass.json
+          # 1) Bring forward previous latest_pass.json + passes/ (if they exist)
+          rm -rf _prev_ghpages
+          git clone --depth 1 --branch gh-pages "https://github.com/${{ github.repository }}.git" _prev_ghpages || true
+
+          if [ -f "_prev_ghpages/latest_pass.json" ]; then
+            cp _prev_ghpages/latest_pass.json validation_out/latest_pass.json
+            echo "Carried forward latest_pass.json from previous gh-pages"
+          fi
+
+          if [ -d "_prev_ghpages/passes" ]; then
+            mkdir -p validation_out/passes
+            cp -R _prev_ghpages/passes/* validation_out/passes/ || true
+            echo "Carried forward passes/ from previous gh-pages"
+          fi
+
+          # 2) If current run PASS: overwrite latest_pass + add new snapshot
           STATUS="$(python3 -c "import json; print(json.load(open('validation_out/validation.json'))['status'])")"
           echo "Validation status: $STATUS"
 
@@ -56,9 +72,9 @@ jobs:
             mkdir -p validation_out/passes
             cp validation_out/validation.json "validation_out/passes/${{ github.sha }}.json"
             cp validation_out/validation.json "validation_out/latest_pass.json"
-            echo "Wrote passes/${{ github.sha }}.json and latest_pass.json"
+            echo "Updated latest_pass.json and wrote passes/${{ github.sha }}.json"
           else
-            echo "Not a pass; no pass snapshot written."
+            echo "Not a pass; kept previous latest_pass.json (if any)."
           fi
 
       - name: Upload validation artifact
@@ -77,7 +93,7 @@ jobs:
           publish_dir: validation_out
       
       - name: Fail workflow if validation failed
-        shell: bash 
+        shell: bash
         if: always()
         run: |
           exit_code=$(cat validation_out/exit_code.txt)
